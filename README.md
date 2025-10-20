@@ -38,6 +38,68 @@ The full list is [here](docs/registry.md).
 
 For build instructions, see [developer.trustwallet.com/wallet-core/building](https://developer.trustwallet.com/wallet-core/building).
 
+## Building NewWallet CLI
+
+NewWallet is a minimal C++ command-line wallet application that demonstrates core wallet functionality using TrustWallet Core.
+
+### Prerequisites
+
+- CMake 3.18 or higher
+- Clang compiler
+- Ninja build system
+- Dependencies installed via `tools/install-dependencies`
+
+### Build Steps
+
+```bash
+# Install dependencies
+tools/install-sys-dependencies-linux  # or tools/install-sys-dependencies-mac on macOS
+tools/install-rust-dependencies
+tools/install-dependencies
+
+# Generate code
+tools/generate-files native
+
+# Configure with CMake
+cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Release -DTW_BUILD_EXAMPLES=ON -GNinja
+
+# Build NewWallet
+ninja -Cbuild newwallet
+
+# Run NewWallet
+./build/src/newwallet/newwallet --help
+```
+
+### NewWallet Commands
+
+```bash
+# Create a new random mnemonic seed phrase
+./build/src/newwallet/newwallet create-seed
+
+# Import an existing mnemonic seed phrase
+./build/src/newwallet/newwallet import-seed "word1 word2 ... word12"
+
+# Derive a Bitcoin address from a mnemonic
+./build/src/newwallet/newwallet derive-address --coin btc "word1 word2 ... word12"
+
+# Derive an Ethereum address from a mnemonic
+./build/src/newwallet/newwallet derive-address --coin eth "word1 word2 ... word12"
+
+# Demonstrate transaction signing
+./build/src/newwallet/newwallet sign-transaction --coin btc "word1 word2 ... word12"
+```
+
+### Running Tests
+
+```bash
+# Build and run all tests
+ninja -Cbuild tests
+./build/tests/tests
+
+# Run only NewWallet tests
+./build/tests/tests --gtest_filter="NewWallet.*"
+```
+
 
 # Using from your project
 
