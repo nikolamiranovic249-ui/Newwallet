@@ -1,0 +1,144 @@
+name: NewWallet CI
+
+on:
+  push:
+    branches: [ dev, master ]
+  pull_request:
+    branches: [ dev, master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install system dependencies
+      run: |
+        tools/install-sys-dependencies-linux
+        tools/install-rust-dependencies
+    
+    - name: Cache internal dependencies
+      id: internal_cache
+      uses: actions/cache@v3
+      with:
+        path: build/local
+        key: ${{ runner.os }}-${{ runner.arch }}-newwallet-${{ hashFiles('tools/install-dependencies') }}-${{ hashFiles('tools/dependencies-version') }}
+    
+    - name: Install internal dependencies
+      run: |
+        tools/install-dependencies
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+      if: steps.internal_cache.outputs.cache-hit != 'true'
+
+    - name: Cache Rust
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          rust
+
+    - name: Code generation
+      run: |
+        tools/generate-files native
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: CMake configure
+      run: |
+        cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Release -DTW_BUILD_EXAMPLES=ON -DTW_UNIT_TESTS=ON -GNinja
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Build NewWallet
+      run: |
+        ninja -Cbuild newwallet
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Build and run tests
+      run: |
+        ninja -Cbuild tests
+        build/tests/tests --gtest_filter="NewWallet.*"
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Test NewWallet CLI
+      run: |
+        ./build/src/newwallet/newwallet create-seed
+        echo "Testing create-seed command passed"
+
+  build-macos:
+    runs-on: macos-14
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install system dependencies
+      run: |
+        tools/install-sys-dependencies-mac
+        tools/install-rust-dependencies
+    
+    - name: Cache internal dependencies
+      id: internal_cache
+      uses: actions/cache@v3
+      with:
+        path: build/local
+        key: ${{ runner.os }}-${{ runner.arch }}-newwallet-${{ hashFiles('tools/install-dependencies') }}-${{ hashFiles('tools/dependencies-version') }}
+    
+    - name: Install internal dependencies
+      run: |
+        tools/install-dependencies
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+      if: steps.internal_cache.outputs.cache-hit != 'true'
+
+    - name: Cache Rust
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          rust
+
+    - name: Code generation
+      run: |
+        tools/generate-files native
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: CMake configure
+      run: |
+        cmake -H. -Bbuild -DCMAKE_BUILD_TYPE=Release -DTW_BUILD_EXAMPLES=ON -DTW_UNIT_TESTS=ON -GNinja
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Build NewWallet
+      run: |
+        ninja -Cbuild newwallet
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Build and run tests
+      run: |
+        ninja -Cbuild tests
+        build/tests/tests --gtest_filter="NewWallet.*"
+      env:
+        CC: /usr/bin/clang
+        CXX: /usr/bin/clang++
+    
+    - name: Test NewWallet CLI
+      run: |
+        ./build/src/newwallet/newwallet create-seed
+        echo "Testing create-seed command passed"

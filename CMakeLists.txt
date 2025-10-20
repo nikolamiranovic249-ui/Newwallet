@@ -130,6 +130,7 @@ endif ()
 if (TW_BUILD_EXAMPLES)
     add_subdirectory(walletconsole/lib)
     add_subdirectory(walletconsole)
+    add_subdirectory(src/newwallet)
 endif ()
 
 if (TW_ENABLE_PVS_STUDIO)
