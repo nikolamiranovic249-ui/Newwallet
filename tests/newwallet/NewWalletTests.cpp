@@ -12,8 +12,6 @@
 
 #include <gtest/gtest.h>
 
-using namespace TW;
-
 TEST(NewWallet, CreateSeed) {
     auto passphrase = STRING("");
     auto wallet = WRAP(TWHDWallet, TWHDWalletCreate(128, passphrase.get()));
